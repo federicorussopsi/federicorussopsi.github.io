@@ -952,3 +952,14 @@ section {
     padding-right: 20px 15px;
   }
 }
+
+
+#subpropic {
+  color: rgb(206, 206, 206);
+  text-align: center;
+  line-height: 85%;
+}
+
+.bx {
+  color: rgb(255, 0, 0);
+}
