@@ -124,6 +124,8 @@ h1, h2, h3, h4, h5, h6 {
   #main {
     margin-left: 0;
   }
+
+  
 }
 /*--------------------------------------------------------------
 # Navigation Menu
@@ -239,6 +241,8 @@ h1, h2, h3, h4, h5, h6 {
   #hero {
     background-attachment: fixed;
   }
+
+  
 }
 @media (max-width: 768px) {
   #hero h1 {
@@ -929,6 +933,11 @@ section {
   .breadcrumbs ol li {
     display: inline-block;
   }
+
+  .memepics {
+    width: 60%;
+  }
+
 }
 
 /*--------------------------------------------------------------
@@ -971,4 +980,13 @@ section {
 
 .bx {
   color: rgb(255, 0, 0);
+}
+
+.bi {
+  color :#149ddd;
+  font-size: 1.8rem;
+}
+
+.memepics {
+  width: 60%;
 }
