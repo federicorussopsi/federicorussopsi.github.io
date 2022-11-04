@@ -990,3 +990,9 @@ section {
 .memepics {
   width: 60%;
 }
+
+.infobox {
+  background-color: #cfcfcf;
+  padding: 1em;
+  margin-bottom: 1em;
+}
