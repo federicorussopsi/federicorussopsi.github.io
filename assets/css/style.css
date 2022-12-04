@@ -996,3 +996,29 @@ section {
   padding: 1em;
   margin-bottom: 1em;
 }
+
+.responsive {
+  width: 100%;
+  height: auto;
+}
+
+.citazione {
+  text-align: right;
+}
+
+#breathing {
+  width: 100px;
+  height: 100px;
+  background-color: rgb(255, 255, 255);
+  color: black;
+  animation: mymove 7s infinite;
+  border-radius: 1000%;
+}
+
+@keyframes mymove {
+  50% {box-shadow: 10px 20px 30px rgb(0, 0, 0);}
+}
+
+#more {
+  display: none;
+}
