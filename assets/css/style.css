@@ -999,7 +999,8 @@ section {
 
 .responsive {
   width: 100%;
-  height: auto;
+  height: auto;  
+  align-items: center;
 }
 
 .citazione {
