@@ -24,30 +24,47 @@
             transform: translate(-50%, -50%);
             display: none;
         }
+        #restartButton {
+            position: fixed;
+            top: 70%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 50px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: none;
+            color: white;
+        }
+        #restartButton:hover {
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
     <img id="gif" src="https://www.icegif.com/wp-content/uploads/2023/01/icegif-162.gif" />
+    <button id="restartButton">🔄</button>
+
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        
-        // Serratura a destra senza il riquadro
-        const keyhole = { x: canvas.width - 150, y: canvas.height / 2, width: 100, height: 160 };  // Serratura spostata a destra senza riquadro
-        
+
+        const keyhole = { x: canvas.width - 150, y: canvas.height / 2, width: 100, height: 160 };
+
         class Key {
-            constructor(x, y, label) {
+            constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.label = label;
                 this.radius = 30;
                 this.isDragging = false;
                 this.startX = x;
                 this.startY = y;
-                this.elasticForce = { x: 0, y: 0 };
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.hasBounced = false;
             }
 
             draw() {
@@ -57,124 +74,166 @@
                 ctx.fill();
                 ctx.stroke();
                 ctx.fillStyle = "black";
-                ctx.font = "40px Arial"; // Maggiore dimensione per l'emoji 🔑
+                ctx.font = "40px Arial";
                 ctx.textAlign = "center";
-                ctx.fillText("🔑", this.x, this.y + 15);  // Emoji 🔑 al posto della parola
+                ctx.fillText("🔑", this.x, this.y + 15);
+            }
+
+            update() {
+                if (!this.isDragging) {
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+
+                    this.velocityX *= 0.9;
+                    this.velocityY *= 0.9;
+
+                    if (Math.abs(this.velocityX) < 0.5 && Math.abs(this.velocityY) < 0.5) {
+                        this.velocityX = 0;
+                        this.velocityY = 0;
+
+                        if (this.hasBounced && this.isNearKeyhole()) {
+                            animateKeyIntoKeyhole();
+                        } else if (!this.isNearKeyhole()) {
+                            this.returnToStart();
+                        }
+                    }
+                }
+            }
+
+            isNearKeyhole() {
+                return (
+                    this.x > keyhole.x &&
+                    this.x < keyhole.x + keyhole.width &&
+                    this.y > keyhole.y - keyhole.height / 2 &&
+                    this.y < keyhole.y + keyhole.height / 2
+                );
+            }
+
+            returnToStart() {
+                this.hasBounced = false;
+                const interval = setInterval(() => {
+                    const dx = this.startX - this.x;
+                    const dy = this.startY - this.y;
+                    const distance = Math.hypot(dx, dy);
+
+                    if (distance > 2) {
+                        this.x += dx / distance * 10;
+                        this.y += dy / distance * 10;
+                    } else {
+                        this.x = this.startX;
+                        this.y = this.startY;
+                        this.velocityX = 0;
+                        this.velocityY = 0;
+                        clearInterval(interval);
+                    }
+
+                    drawGame();
+                }, 16);
             }
         }
 
-        const keys = [
-            new Key(canvas.width / 2, canvas.height / 2 - 100, "START") // Mantenuto solo un pulsante
-        ];
+        const key = new Key(canvas.width / 2, canvas.height / 2 - 100);
+        let offsetX = 0, offsetY = 0;
 
         function drawGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Disegna l'emoji 🚪 al posto del riquadro della serratura, con dimensioni più grandi
-            ctx.font = "120px Arial";  // Dimensioni maggiori per l'emoji 🚪
+            ctx.font = "120px Arial";
             ctx.textAlign = "center";
-            ctx.fillText("🚪", keyhole.x + keyhole.width / 2, keyhole.y);  // Emoji nella serratura senza riquadro
-            
-            keys.forEach(key => key.draw());
+            ctx.fillText("🚪", keyhole.x + keyhole.width / 2, keyhole.y);
+            key.draw();
         }
 
-        canvas.addEventListener("mousedown", (e) => {
-            const { clientX, clientY } = e;
-            keys.forEach(key => {
-                const dist = Math.hypot(clientX - key.x, clientY - key.y);
-                if (dist < key.radius) {
-                    key.isDragging = true;
-                }
-            });
-        });
+        function animate() {
+            key.update();
+            drawGame();
+            requestAnimationFrame(animate);
+        }
 
-        canvas.addEventListener("mousemove", (e) => {
-            keys.forEach(key => {
-                if (key.isDragging) {
-                    key.x = e.clientX;
-                    key.y = e.clientY;
-                }
-            });
-        });
+        function startDrag(x, y) {
+            const dist = Math.hypot(x - key.x, y - key.y);
+            if (dist < key.radius) {
+                key.isDragging = true;
+                offsetX = x - key.x;
+                offsetY = y - key.y;
+                key.hasBounced = false;
+            }
+        }
 
-        canvas.addEventListener("mouseup", () => {
-            keys.forEach(key => {
-                if (key.isDragging) {
-                    key.isDragging = false;
-                    key.elasticForce.x = (key.startX - key.x) * 2;
-                    key.elasticForce.y = (key.startY - key.y) * 2;
-                    key.x += key.elasticForce.x;
-                    key.y += key.elasticForce.y;
+        function moveDrag(x, y) {
+            if (key.isDragging) {
+                key.x = x - offsetX;
+                key.y = y - offsetY;
+            }
+        }
 
-                    // Check for win condition
-                    if (
-                        key.x > keyhole.x &&
-                        key.x < keyhole.x + keyhole.width &&
-                        key.y > keyhole.y - keyhole.height / 2 &&
-                        key.y < keyhole.y + keyhole.height / 2
-                    ) {
-                        animateKeyIntoKeyhole(key); // Avvia l'animazione per la chiave
-                    } else {
-                        resetKey(key);  // Torna alla posizione iniziale
-                    }
-                }
-            });
-        });
+        function endDrag(x, y) {
+            if (key.isDragging) {
+                key.isDragging = false;
+                let dx = key.startX - key.x;
+                let dy = key.startY - key.y;
+                let distance = Math.hypot(dx, dy);
 
-        function resetKey(key) {
-            const interval = setInterval(() => {
-                const dx = key.startX - key.x;
-                const dy = key.startY - key.y;
-                const distance = Math.hypot(dx, dy);
-                
-                if (distance > 2) {
-                    key.x += dx / distance * 5;  // Velocità del ritorno alla posizione iniziale
-                    key.y += dy / distance * 5;
+                if (distance > 10) {
+                    key.velocityX = dx * 0.2;
+                    key.velocityY = dy * 0.2;
+                    key.hasBounced = true;
                 } else {
-                    key.x = key.startX;
-                    key.y = key.startY;
-                    clearInterval(interval);  // Ferma l'animazione di ritorno
+                    key.returnToStart();
                 }
-
-                drawGame();
-            }, 16); // Circa 60 fps
+            }
         }
 
-        function animateKeyIntoKeyhole(key) {
-            // Animazione per far spostare la chiave verso la serratura
+        // Eventi mouse
+        canvas.addEventListener("mousedown", (e) => startDrag(e.clientX, e.clientY));
+        canvas.addEventListener("mousemove", (e) => moveDrag(e.clientX, e.clientY));
+        canvas.addEventListener("mouseup", (e) => endDrag(e.clientX, e.clientY));
+
+        // Eventi touch (per mobile)
+        canvas.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            startDrag(touch.clientX, touch.clientY);
+        });
+
+        canvas.addEventListener("touchmove", (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            moveDrag(touch.clientX, touch.clientY);
+        });
+
+        canvas.addEventListener("touchend", (e) => {
+            e.preventDefault();
+            endDrag(key.x, key.y);
+        });
+
+        function animateKeyIntoKeyhole() {
             const interval = setInterval(() => {
                 const dx = keyhole.x + keyhole.width / 2 - key.x;
                 const dy = keyhole.y - key.y;
                 const distance = Math.hypot(dx, dy);
-                
+
                 if (distance > 2) {
-                    key.x += dx / distance * 5;  // Velocità della chiave verso la serratura
+                    key.x += dx / distance * 5;
                     key.y += dy / distance * 5;
                 } else {
                     key.x = keyhole.x + keyhole.width / 2;
                     key.y = keyhole.y;
-                    clearInterval(interval);  // Ferma l'animazione
-                    showGif();  // Mostra la gif
+                    clearInterval(interval);
+                    showVictoryScreen();
                 }
-
-                drawGame();
-            }, 16); // Circa 60 fps
+            }, 16);
         }
 
-        function showGif() {
-            const gif = document.getElementById("gif");
-            gif.style.display = "block"; // Mostra la gif
-            setTimeout(() => {
-                alert("HAI VINTO"); // Mostra la modale
-            }, 1500); // Attende che la gif sia visibile prima di mostrare il messaggio
+        function showVictoryScreen() {
+            document.getElementById("gif").style.display = "block";
+            document.getElementById("restartButton").style.display = "block";
         }
 
-        function gameLoop() {
-            drawGame();
-            requestAnimationFrame(gameLoop);
-        }
+        document.getElementById("restartButton").addEventListener("click", () => {
+            location.reload();
+        });
 
-        gameLoop();
+        animate();
     </script>
 </body>
 </html>
