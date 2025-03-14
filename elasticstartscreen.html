@@ -100,14 +100,16 @@
                 }
             }
 
-            isNearKeyhole() {
-                return (
-                    this.x > keyhole.x &&
-                    this.x < keyhole.x + keyhole.width &&
-                    this.y > keyhole.y - keyhole.height / 2 &&
-                    this.y < keyhole.y + keyhole.height / 2
-                );
-            }
+                isNearKeyhole() {
+    const margin = 40; 
+
+    return (
+        this.x > keyhole.x - margin && 
+        this.x < keyhole.x + keyhole.width + margin && 
+        this.y > keyhole.y - keyhole.height / 2 - margin && 
+        this.y < keyhole.y + keyhole.height / 2 + margin  
+    );
+}
 
             returnToStart() {
                 this.hasBounced = false;
